@@ -74,6 +74,22 @@ class DeepfakeDetector:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {self.device}")
         
+        # Download model from Google Drive if not present (for deployment)
+        if not os.path.exists(model_path):
+            try:
+                print("📥 Downloading model from Hugging Face/Google Drive...")
+                from huggingface_hub import hf_hub_download
+                os.makedirs('./models_v2', exist_ok=True)
+                model_path = hf_hub_download(
+                    repo_id="riceu69/deepguard-model",
+                    filename="best_model.pth",
+                    local_dir="./models_v2"
+                )
+                print("✅ Model downloaded")
+            except Exception as e:
+                print(f"⚠️  Could not download model: {e}")
+                print("    Using pretrained backbones only")
+        
         # Load model architecture
         print("Loading model architecture...")
         self.model = TwoModelEnsemble(num_classes=2)
@@ -81,12 +97,16 @@ class DeepfakeDetector:
         # Load trained weights
         if os.path.exists(model_path):
             print(f"Loading weights from {model_path}...")
-            checkpoint = torch.load(model_path, map_location=self.device)
-            self.model.load_state_dict(checkpoint['model_state_dict'])
-            print("✅ Model loaded successfully")
+            try:
+                checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                print("✅ Model loaded successfully")
+            except Exception as e:
+                print(f"⚠️  Error loading weights: {e}")
+                print("    Using pretrained backbones only")
         else:
             print(f"⚠️  Model not found at {model_path}")
-            print("Using untrained model (for testing only)")
+            print("    Using pretrained backbones only")
         
         self.model.to(self.device)
         self.model.eval()
@@ -242,6 +262,17 @@ class DeepfakeDetector:
         """
         print(f"\nAnalyzing video: {video_path}")
         
+        # Liveness detection disabled for deployment
+        # (Requires dlib/face_recognition which don't build on free tier)
+        liveness_results = {
+            'blink_detected': False,
+            'head_turn_left': False,
+            'head_turn_right': False,
+            'smile_detected': False,
+            'liveness_score': 0,
+            'is_live': False
+        }
+        
         # Extract frames
         frames = self.extract_frames(video_path)
         if len(frames) == 0:
@@ -250,7 +281,8 @@ class DeepfakeDetector:
                 'is_deepfake': False,
                 'confidence': 0.0,
                 'frames_analyzed': 0,
-                'faces_detected': 0
+                'faces_detected': 0,
+                'liveness': liveness_results
             }
         
         # Detect faces
@@ -261,7 +293,8 @@ class DeepfakeDetector:
                 'is_deepfake': False,
                 'confidence': 0.0,
                 'frames_analyzed': len(frames),
-                'faces_detected': 0
+                'faces_detected': 0,
+                'liveness': liveness_results
             }
         
         # Predict on each face
@@ -270,10 +303,12 @@ class DeepfakeDetector:
             fake_prob = self.predict_frame(face)
             predictions.append(fake_prob)
         
+        # Calculate temporal consistency (frame-to-frame variance)
+        temporal_consistency = np.std(predictions) if len(predictions) > 1 else 0
+        
         # Aggregate results
         avg_fake_prob = np.mean(predictions)
         max_fake_prob = np.max(predictions)
-        temporal_consistency = np.std(predictions) if len(predictions) > 1 else 0
         
         # Decision
         is_deepfake = avg_fake_prob > self.threshold
@@ -285,17 +320,19 @@ class DeepfakeDetector:
             'max_confidence': float(max_fake_prob * 100),
             'frames_analyzed': len(frames),
             'faces_detected': len(faces),
+            'liveness': liveness_results,
             'temporal_consistency': float(temporal_consistency),
             'risk_scores': {
                 'deepfake_score': float(avg_fake_prob * 100),
-                'liveness_score': 0,
+                'liveness_score': 0,  # Disabled
                 'temporal_score': float((1 - min(temporal_consistency, 1.0)) * 100),
                 'overall_risk': float(avg_fake_prob * 100)
             },
             'prediction_details': {
                 'average_fake_probability': float(avg_fake_prob),
                 'max_fake_probability': float(max_fake_prob),
-                'threshold': self.threshold
+                'threshold': self.threshold,
+                'adjusted_probability': float(avg_fake_prob)
             }
         }
         
