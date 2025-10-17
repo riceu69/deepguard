@@ -17,7 +17,7 @@ def download_model():
     os.makedirs(model_dir, exist_ok=True)
     
     # YOUR GOOGLE DRIVE FILE ID HERE
-    file_id = "1ztKysDs6gyuk"  # ← REPLACE THIS
+    file_id = "1ztKysDs6gyuk-TiYiQMXhG6I3Ln8JAzX"  # ← REPLACE THIS
     
     url = f"https://drive.google.com/uc?id={file_id}"
     
