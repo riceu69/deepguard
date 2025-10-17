@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepGuard - Identity Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .nav {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav a {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover, .nav a.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+
+        .upload-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: block;
+            margin: 30px auto;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-card.verified {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .result-card.rejected {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .result-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .detail-box {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .detail-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .detail-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .reasons {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .reasons li {
+            margin: 5px 0;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ DeepGuard</h1>
+            <p>Identity Verification & Deepfake Detection</p>
+        </div>
+
+        <div class="nav">
+            <a href="/">Video Analysis</a>
+            <a href="/static/verify.html" class="active">Identity Verification</a>
+        </div>
+
+        <div class="upload-section">
+            <h2 style="text-align: center; margin-bottom: 30px;">Upload Documents for Verification</h2>
+            
+            <div class="upload-grid">
+                <div class="upload-box" onclick="document.getElementById('idInput').click()">
+                    <div class="upload-icon">🆔</div>
+                    <h3>ID Document</h3>
+                    <p>Upload government-issued ID photo</p>
+                    <input type="file" id="idInput" accept="image/*">
+                    <img id="idPreview" class="preview-img" style="display: none;">
+                </div>
+
+                <div class="upload-box" onclick="document.getElementById('selfieInput').click()">
+                    <div class="upload-icon">🤳</div>
+                    <h3>Selfie</h3>
+                    <p>Upload current selfie photo</p>
+                    <input type="file" id="selfieInput" accept="image/*">
+                    <img id="selfiePreview" class="preview-img" style="display: none;">
+                </div>
+            </div>
+
+            <button class="btn" id="verifyBtn" disabled>🔍 Verify Identity</button>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <h3>Verifying identity...</h3>
+            <p>Please wait while we analyze the documents</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="result-card" id="resultCard">
+                <div class="result-title" id="resultTitle"></div>
+                
+                <div class="result-details">
+                    <div class="detail-box">
+                        <div class="detail-label">Identity Match</div>
+                        <div class="detail-value" id="matchStatus"></div>
+                        <div id="matchConfidence"></div>
+                    </div>
+                    
+                    <div class="detail-box">
+                        <div class="detail-label">Authenticity Check</div>
+                        <div class="detail-value" id="fakeStatus"></div>
+                        <div id="fakeConfidence"></div>
+                    </div>
+                </div>
+
+                <div class="reasons" id="reasons" style="display: none;">
+                    <h4>Rejection Reasons:</h4>
+                    <ul id="reasonsList"></ul>
+                </div>
+            </div>
+
+            <button class="btn" onclick="location.reload()">🔄 Verify Another</button>
+        </div>
+    </div>
+
+    <script>
+        let idFile = null;
+        let selfieFile = null;
+
+        const idInput = document.getElementById('idInput');
+        const selfieInput = document.getElementById('selfieInput');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const loader = document.getElementById('loader');
+        const results = document.getElementById('results');
+        const error = document.getElementById('error');
+
+        idInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                idFile = file;
+                const preview = document.getElementById('idPreview');
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                checkReady();
+            }
+        });
+
+        selfieInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selfieFile = file;
+                const preview = document.getElementById('selfiePreview');
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                checkReady();
+            }
+        });
+
+        function checkReady() {
+            verifyBtn.disabled = !(idFile && selfieFile);
+        }
+
+        verifyBtn.addEventListener('click', async () => {
+            document.querySelector('.upload-section').style.display = 'none';
+            loader.style.display = 'block';
+            error.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('id_image', idFile);
+                formData.append('selfie_image', selfieFile);
+
+                const response = await fetch('/api/verify-identity', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Verification failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (err) {
+                loader.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = 'Error: ' + err.message;
+                document.querySelector('.upload-section').style.display = 'block';
+            }
+        });
+
+        function displayResults(result) {
+            loader.style.display = 'none';
+            results.style.display = 'block';
+
+            const resultCard = document.getElementById('resultCard');
+            const resultTitle = document.getElementById('resultTitle');
+
+            if (result.verification_passed) {
+                resultCard.className = 'result-card verified';
+                resultTitle.textContent = '✅ IDENTITY VERIFIED';
+            } else {
+                resultCard.className = 'result-card rejected';
+                resultTitle.textContent = '⚠️ VERIFICATION FAILED';
+            }
+
+            // Identity match
+            document.getElementById('matchStatus').textContent = result.identity_match.status;
+            document.getElementById('matchConfidence').textContent = 
+                `${result.identity_match.confidence.toFixed(1)}% confidence`;
+
+            // Deepfake detection
+            document.getElementById('fakeStatus').textContent = result.deepfake_detection.status;
+            document.getElementById('fakeConfidence').textContent = 
+                `${result.deepfake_detection.confidence.toFixed(1)}% confidence`;
+
+            // Rejection reasons
+            if (result.rejection_reasons.length > 0) {
+                document.getElementById('reasons').style.display = 'block';
+                const reasonsList = document.getElementById('reasonsList');
+                reasonsList.innerHTML = '';
+                result.rejection_reasons.forEach(reason => {
+                    const li = document.createElement('li');
+                    li.textContent = reason;
+                    reasonsList.appendChild(li);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepGuard - AI Deepfake Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .nav {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 15px;
+        }
+
+        .nav a {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .nav a.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .nav a:not(.active) {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .nav a:hover {
+            transform: scale(1.05);
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .upload-section:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section.dragover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .media-preview {
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto 20px;
+            border-radius: 10px;
+            display: block;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-card.real {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .result-card.fake {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .result-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .confidence {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ DeepGuard</h1>
+            <p>AI-Powered Deepfake Detection for Secure Identity Verification</p>
+        </div>
+
+        <div class="nav">
+            <a href="/" class="active">📹 Deepfake Detection</a>
+            <a href="/verify">🆔 Identity Verification</a>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📸</div>
+            <h2>Upload Image or Video for Analysis</h2>
+            <p style="margin: 15px 0; color: #666;">
+                Drag & drop your <strong>photo or video</strong> here or click to browse
+            </p>
+            <p style="color: #999; font-size: 0.9em;">
+                Supported: JPG, PNG (images) | MP4, AVI, MOV (videos)
+            </p>
+            <input type="file" id="fileInput" accept="image/*,video/*">
+            <button class="btn" onclick="document.getElementById('fileInput').click()">
+                Choose File
+            </button>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <h3 style="text-align: center; margin-bottom: 20px;" id="previewTitle">Preview</h3>
+            <video id="videoPreview" class="media-preview" controls style="display: none;"></video>
+            <img id="imagePreview" class="media-preview" style="display: none;">
+            <div style="text-align: center;">
+                <button class="btn" id="analyzeBtn">🔍 Analyze for Deepfakes</button>
+                <button class="btn" style="background: #ccc;" onclick="location.reload()">
+                    📤 Upload Different File
+                </button>
+            </div>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <h3>🔍 Analyzing for deepfakes...</h3>
+            <p>This may take a few moments</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="result-card" id="resultCard">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="confidence" id="resultConfidence"></div>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-label">Analysis Type</div>
+                        <div class="metric-value" id="analysisType">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Faces Detected</div>
+                        <div class="metric-value" id="facesDetected">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Deepfake Score</div>
+                        <div class="metric-value" id="deepfakeScore">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Confidence</div>
+                        <div class="metric-value" id="confidenceLevel">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="location.reload()">🔄 Analyze Another File</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🏆 ZenTej Season 3 Hackathon @ CAIR IIT Mandi</p>
+            <p>Built with ❤️ using FastAPI, PyTorch & EfficientNet</p>
+        </div>
+    </div>
+
+    <script>
+        const uploadSection = document.getElementById('uploadSection');
+        const previewSection = document.getElementById('previewSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const loader = document.getElementById('loader');
+        const error = document.getElementById('error');
+        const fileInput = document.getElementById('fileInput');
+        const videoPreview = document.getElementById('videoPreview');
+        const imagePreview = document.getElementById('imagePreview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const previewTitle = document.getElementById('previewTitle');
+
+        let selectedFile = null;
+        let fileType = null; // 'image' or 'video'
+
+        // Drag and drop handlers
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                handleFileSelect(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileSelect(file);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            const url = URL.createObjectURL(file);
+
+            // Determine if it's an image or video
+            if (file.type.startsWith('image/')) {
+                fileType = 'image';
+                imagePreview.src = url;
+                imagePreview.style.display = 'block';
+                videoPreview.style.display = 'none';
+                previewTitle.textContent = 'Image Preview';
+            } else if (file.type.startsWith('video/')) {
+                fileType = 'video';
+                videoPreview.src = url;
+                videoPreview.style.display = 'block';
+                imagePreview.style.display = 'none';
+                previewTitle.textContent = 'Video Preview';
+            } else {
+                showError('Please select a valid image or video file');
+                return;
+            }
+
+            uploadSection.style.display = 'none';
+            previewSection.style.display = 'block';
+            error.style.display = 'none';
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            previewSection.style.display = 'none';
+            loader.style.display = 'block';
+            error.style.display = 'none';
+            resultsSection.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                // Choose endpoint based on file type
+                const endpoint = fileType === 'image' ? '/api/analyze-image' : '/api/analyze-video';
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Analysis failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (err) {
+                loader.style.display = 'none';
+                previewSection.style.display = 'block';
+                showError('Error analyzing file: ' + err.message);
+            }
+        });
+
+        function displayResults(result) {
+            loader.style.display = 'none';
+            resultsSection.style.display = 'block';
+
+            const resultCard = document.getElementById('resultCard');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultConfidence = document.getElementById('resultConfidence');
+
+            if (result.is_deepfake || result.is_fake) {
+                resultCard.className = 'result-card fake';
+                resultTitle.textContent = '⚠️ DEEPFAKE DETECTED';
+                const conf = result.confidence || result.fake_confidence || 0;
+                resultConfidence.textContent = `${conf.toFixed(1)}% Confidence`;
+            } else {
+                resultCard.className = 'result-card real';
+                resultTitle.textContent = '✅ AUTHENTIC';
+                const conf = result.confidence || result.fake_confidence || 0;
+                resultConfidence.textContent = `${(100 - conf).toFixed(1)}% Confidence (Real)`;
+            }
+
+            // Display metrics
+            document.getElementById('analysisType').textContent = 
+                fileType === 'image' ? 'Image' : 'Video';
+            document.getElementById('facesDetected').textContent = 
+                result.faces_detected || '1';
+            
+            const score = result.risk_scores ? 
+                result.risk_scores.deepfake_score : 
+                (result.confidence || result.fake_confidence || 0);
+            document.getElementById('deepfakeScore').textContent = score.toFixed(1) + '%';
+            
+            const confidence = result.confidence || result.fake_confidence || 0;
+            document.getElementById('confidenceLevel').textContent = confidence.toFixed(1) + '%';
+        }
+
+        function showError(message) {
+            error.style.display = 'block';
+            error.textContent = message;
+        }
+    </script>
+</body>
+</html>
