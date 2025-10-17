@@ -207,12 +207,12 @@ async def health_check():
         "gpu": deepfake_detector.device.type
     }
 
-if __name__ == "__main__":
-    print("\n" + "="*50)
-    print("🚀 DeepGuard Server Starting")
-    print("="*50)
-    print("📹 Video Analysis: http://localhost:8000")
-    print("🆔 Identity Verify: http://localhost:8000/verify")
-    print("="*50 + "\n")
+# if __name__ == "__main__":
+#     print("\n" + "="*50)
+#     print("🚀 DeepGuard Server Starting")
+#     print("="*50)
+#     print("📹 Video Analysis: http://localhost:8000")
+#     print("🆔 Identity Verify: http://localhost:8000/verify")
+#     print("="*50 + "\n")
     
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+#     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
