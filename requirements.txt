@@ -1,17 +1,17 @@
---extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.5.1+cpu
 torchvision==0.21.0+cpu
-fastapi==0.119.0
-uvicorn==0.37.0
-python-multipart==0.0.20
-timm==1.0.20
-facenet-pytorch==2.6.0
-opencv-python-headless==4.9.0.80
-Pillow==10.2.0
-mtcnn==1.0.0
+--extra-index-url https://download.pytorch.org/whl/cpu
+fastapi==0.115.0
+uvicorn==0.32.0
+python-multipart==0.0.12
+timm==1.0.9
+facenet-pytorch==2.5.3
+opencv-python-headless==4.10.0.84
+Pillow==10.4.0
+mtcnn==0.1.1
 numpy==1.26.4
-scipy==1.15.3
-scikit-learn==1.7.2
-requests==2.32.5
-pydantic==2.12.2
+scipy==1.13.1
+scikit-learn==1.5.2
+requests==2.32.3
+pydantic==2.9.2
 gdown==5.2.0
