@@ -8,7 +8,7 @@ venv/
 env/
 ENV/
 
-# Model files (too large for git)
+# Model files (too large)
 models_v2/*.pth
 *.pth
 *.pt
@@ -39,6 +39,6 @@ Thumbs.db
 .ipynb_checkpoints/
 *.ipynb
 
-# Training artifacts
+# Training
 training_history.png
 final_evaluation.png

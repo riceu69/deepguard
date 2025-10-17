@@ -9,6 +9,23 @@ from datetime import datetime
 from pathlib import Path
 from detector import DeepfakeDetector, FaceMatchingModel
 from PIL import Image
+import sys
+from pathlib import Path
+
+# Download model before loading detector
+print("="*60)
+print("🚀 INITIALIZING DEEPGUARD")
+print("="*60)
+
+# Import download function
+from download_model import download_model
+
+# Download model (only happens once)
+model_path = download_model()
+
+print("="*60)
+print("✅ INITIALIZATION COMPLETE")
+print("="*60)
 
 BASE_DIR = Path(__file__).resolve().parent
 
